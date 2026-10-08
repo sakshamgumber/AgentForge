@@ -1,0 +1,17 @@
+services:
+  moonshine:
+    build: .
+    container_name: moonshine-medium-streaming
+    ports:
+      - "8000:8000"
+    restart: unless-stopped
+
+    volumes:
+      # Persist downloaded model assets
+      - moonshine-models:/root/.cache
+
+    environment:
+      PYTHONUNBUFFERED: "1"
+
+volumes:
+  moonshine-models:
