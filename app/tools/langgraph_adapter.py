@@ -7,28 +7,41 @@ from typing import Any, Callable, Dict, List, Optional, Sequence
 from app.tools.base import BaseTool, ExecutionContext, ToolError
 
 
-def format_error_for_langgraph(tool_name: str, tool_call_id: str, error: Exception) -> Dict[str, Any]:
+def format_error_for_langgraph(
+    tool_name: str,
+    tool_call_id: str,
+    error: Exception,
+    attempt_id: Optional[str] = None,
+) -> Dict[str, Any]:
     """Format an exception into a structured LangGraph tool message error response."""
     error_type = error.__class__.__name__
     error_msg = str(error)
     details = getattr(error, "details", {})
 
-    content = json.dumps({
+    payload: Dict[str, Any] = {
         "status": "error",
         "tool_name": tool_name,
         "error_type": error_type,
         "message": error_msg,
         "details": details,
         "guidance": "Please review the required parameters and constraints and retry.",
-    })
+    }
+    if attempt_id:
+        payload["attempt_id"] = attempt_id
 
-    return {
+    content = json.dumps(payload)
+
+    response: Dict[str, Any] = {
         "role": "tool",
         "tool_call_id": tool_call_id,
         "name": tool_name,
         "content": content,
         "status": "error",
     }
+    if attempt_id:
+        response["attempt_id"] = attempt_id
+    return response
+
 
 
 class LangGraphToolNode:
@@ -73,16 +86,25 @@ class LangGraphToolNode:
             try:
                 result = tool.execute(args, context=self.context)
                 content = json.dumps(result) if not isinstance(result, str) else result
-                tool_messages.append({
+                msg: Dict[str, Any] = {
                     "role": "tool",
                     "tool_call_id": call_id,
                     "name": name,
                     "content": content,
                     "status": "success",
-                })
+                }
+                if getattr(tool, "attempt_id", None):
+                    msg["attempt_id"] = tool.attempt_id
+                tool_messages.append(msg)
             except Exception as e:
                 # Capture tool errors (validation, timeout, permission, execution) for LangGraph recovery
-                error_msg = format_error_for_langgraph(tool_name=name, tool_call_id=call_id, error=e)
+                attempt_id = getattr(tool, "attempt_id", None)
+                error_msg = format_error_for_langgraph(
+                    tool_name=name,
+                    tool_call_id=call_id,
+                    error=e,
+                    attempt_id=attempt_id,
+                )
                 tool_messages.append(error_msg)
 
         return {"messages": tool_messages}

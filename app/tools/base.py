@@ -22,8 +22,11 @@ class ExecutionContext(BaseModel):
     """Context of the caller to verify permissions before tool execution."""
     user_id: Optional[str] = None
     session_id: Optional[str] = None
+    attempt_id: Optional[str] = None
+    operation_id: Optional[str] = None
     permissions: Set[ToolPermission] = Field(default_factory=lambda: {ToolPermission.READ})
     is_admin: bool = False
+
 
     def has_permission(self, permission: ToolPermission) -> bool:
         if self.is_admin:
@@ -59,6 +62,8 @@ class BaseTool(ABC):
     - permissions: ToolPermission (READ, WRITE, DESTRUCTIVE, ADMIN) verified against ExecutionContext.
     - idempotent: Boolean flag indicating whether repeating the call is safe without side effects.
     - status: ToolStatus enum indicating execution outcome (SUCCESS, FAILURE, TIMEOUT, PERMISSION_DENIED).
+    - attempt_id: Optional tracking identifier for the tool execution attempt.
+    - operation_id: Optional tracking identifier for the broader operation/workflow.
     - max_output_chars: Maximum characters allowed in tool output before compression/truncation is applied.
     - compress_output: Boolean flag enabling automatic JSON/text output compression.
     """
@@ -73,6 +78,8 @@ class BaseTool(ABC):
     permissions: ToolPermission = ToolPermission.READ
     idempotent: bool = False
     status: ToolStatus = ToolStatus.SUCCESS
+    attempt_id: Optional[str] = None
+    operation_id: Optional[str] = None
     max_output_chars: Optional[int] = 4000
     compress_output: bool = True
 
@@ -88,6 +95,8 @@ class BaseTool(ABC):
         permissions: Optional[ToolPermission] = None,
         idempotent: Optional[bool] = None,
         status: Optional[ToolStatus] = None,
+        attempt_id: Optional[str] = None,
+        operation_id: Optional[str] = None,
         max_output_chars: Optional[int] = None,
         compress_output: Optional[bool] = None,
     ):
@@ -111,12 +120,17 @@ class BaseTool(ABC):
             self.idempotent = idempotent
         if status is not None:
             self.status = status if isinstance(status, ToolStatus) else ToolStatus(status)
+        if attempt_id is not None:
+            self.attempt_id = attempt_id
+        if operation_id is not None:
+            self.operation_id = operation_id
         if max_output_chars is not None:
             self.max_output_chars = max_output_chars
         if compress_output is not None:
             self.compress_output = compress_output
 
         self._validate_interface()
+
 
     def _validate_interface(self) -> None:
         """Validate tool schema definition on initialization."""
@@ -238,14 +252,42 @@ class BaseTool(ABC):
             },
         }
 
+    @property
+    def attempId(self) -> Optional[str]:
+        """CamelCase alias for attempt_id."""
+        return self.attempt_id
+
+    @attempId.setter
+    def attempId(self, value: Optional[str]) -> None:
+        self.attempt_id = value
+
+    @property
+    def operationId(self) -> Optional[str]:
+        """CamelCase alias for operation_id."""
+        return self.operation_id
+
+    @operationId.setter
+    def operationId(self, value: Optional[str]) -> None:
+        self.operation_id = value
+
     def compress_result(self, result: Any) -> Any:
         """Compress tool output if compress_output is enabled and max_output_chars is set."""
         if self.compress_output and self.max_output_chars is not None and self.max_output_chars > 0:
             return compress_tool_output(result, max_chars=self.max_output_chars)
         return result
 
-    def execute(self, args: Optional[Dict[str, Any]] = None, context: Optional[ExecutionContext] = None) -> Any:
+    def execute(
+        self,
+        args: Optional[Dict[str, Any]] = None,
+        context: Optional[ExecutionContext] = None,
+        attempt_id: Optional[str] = None,
+    ) -> Any:
         """Execute tool synchronously with permission checks, parameter validation, timeout, and output compression."""
+        if attempt_id is not None:
+            self.attempt_id = attempt_id
+        elif context and getattr(context, "attempt_id", None):
+            self.attempt_id = context.attempt_id
+
         try:
             self.check_permissions(context)
         except ToolPermissionError:
@@ -275,7 +317,7 @@ class BaseTool(ABC):
                     raise ToolTimeoutError(
                         f"Tool '{self.name}' timed out after {timeout} seconds",
                         tool_name=self.name,
-                        details={"timeout_seconds": timeout},
+                        details={"timeout_seconds": timeout, "attempt_id": self.attempt_id},
                     ) from te
                 except Exception as e:
                     self.status = ToolStatus.FAILURE
@@ -300,8 +342,18 @@ class BaseTool(ABC):
                     tool_name=self.name,
                 ) from e
 
-    async def aexecute(self, args: Optional[Dict[str, Any]] = None, context: Optional[ExecutionContext] = None) -> Any:
+    async def aexecute(
+        self,
+        args: Optional[Dict[str, Any]] = None,
+        context: Optional[ExecutionContext] = None,
+        attempt_id: Optional[str] = None,
+    ) -> Any:
         """Execute tool asynchronously with permission checks, parameter validation, timeout, and output compression."""
+        if attempt_id is not None:
+            self.attempt_id = attempt_id
+        elif context and getattr(context, "attempt_id", None):
+            self.attempt_id = context.attempt_id
+
         try:
             self.check_permissions(context)
         except ToolPermissionError:
@@ -330,7 +382,7 @@ class BaseTool(ABC):
                 raise ToolTimeoutError(
                     f"Tool '{self.name}' timed out after {timeout} seconds",
                     tool_name=self.name,
-                    details={"timeout_seconds": timeout},
+                    details={"timeout_seconds": timeout, "attempt_id": self.attempt_id},
                 ) from te
             except Exception as e:
                 self.status = ToolStatus.FAILURE
@@ -356,11 +408,21 @@ class BaseTool(ABC):
                 ) from e
 
     # Aliases for LangChain/LangGraph conventions
-    def run(self, args: Optional[Dict[str, Any]] = None, context: Optional[ExecutionContext] = None) -> Any:
-        return self.execute(args, context=context)
+    def run(
+        self,
+        args: Optional[Dict[str, Any]] = None,
+        context: Optional[ExecutionContext] = None,
+        attempt_id: Optional[str] = None,
+    ) -> Any:
+        return self.execute(args, context=context, attempt_id=attempt_id)
 
-    async def arun(self, args: Optional[Dict[str, Any]] = None, context: Optional[ExecutionContext] = None) -> Any:
-        return await self.aexecute(args, context=context)
+    async def arun(
+        self,
+        args: Optional[Dict[str, Any]] = None,
+        context: Optional[ExecutionContext] = None,
+        attempt_id: Optional[str] = None,
+    ) -> Any:
+        return await self.aexecute(args, context=context, attempt_id=attempt_id)
 
     # LangGraph Error Handler integration
     def handle_tool_error(self, error: Exception) -> Dict[str, Any]:
@@ -379,6 +441,8 @@ class BaseTool(ABC):
         return {
             "status": status.value,
             "tool_name": self.name,
+            "attempt_id": self.attempt_id,
+            "attempId": self.attempt_id,
             "error_type": error_type,
             "message": message,
             "details": details,
@@ -394,3 +458,4 @@ class BaseTool(ABC):
         """Internal asynchronous execution."""
         loop = asyncio.get_running_loop()
         return await loop.run_in_executor(None, self._run, args, context)
+
