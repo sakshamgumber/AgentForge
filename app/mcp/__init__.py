@@ -3,7 +3,9 @@
 import sys
 from app.mcp import configuration
 from app.mcp.client_manager import MCPClientManager
+from app.mcp.tool_wrapper import MCPToolWrapper
 from app.mcp.configuration import (
+
     get_context7_config,
     get_duckduckgo_config,
     get_filesystem_config,
@@ -19,7 +21,9 @@ sys.modules.setdefault("app.mcp.configurations", configuration)
 
 __all__ = [
     "MCPClientManager",
+    "MCPToolWrapper",
     "configuration",
+
     "configurations",
     "get_context7_config",
     "get_duckduckgo_config",

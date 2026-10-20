@@ -138,6 +138,30 @@ class MCPClientManager:
         client = self.get_client()
         return await client.get_tools()
 
+    async def get_wrapped_tools(
+        self,
+        attempt_id: Optional[str] = None,
+        operation_id: Optional[str] = None,
+        enable_db_logging: bool = True,
+        timeout_seconds: Optional[float] = 30.0,
+    ) -> List[Any]:
+        """Discover and return all MCP tools wrapped into AgentForge BaseTool with attempt_id and DB tracing."""
+        from app.mcp.tool_wrapper import MCPToolWrapper
+
+        raw_tools = await self.get_tools()
+        wrapped_tools = []
+        for tool in raw_tools:
+            wrapped = MCPToolWrapper(
+                mcp_tool=tool,
+                attempt_id=attempt_id,
+                operation_id=operation_id,
+                enable_db_logging=enable_db_logging,
+                timeout_seconds=timeout_seconds,
+            )
+            wrapped_tools.append(wrapped)
+        return wrapped_tools
+
+
     async def close(self) -> None:
         """Close client connections gracefully."""
         if self._client is not None:
