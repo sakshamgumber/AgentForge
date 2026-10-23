@@ -10,9 +10,11 @@ Exposes GitHub tools strictly through external MCP servers via AgentForge's Base
 
 from __future__ import annotations
 
-from typing import Any, List, Optional
+from typing import TYPE_CHECKING, Any, List, Optional
 
-from app.mcp.tool_wrapper import MCPToolWrapper
+if TYPE_CHECKING:
+    from app.mcp.tool_wrapper import MCPToolWrapper
+
 from app.tools.base_provider import BaseMCPToolProvider
 from app.tools.enums import ToolPermission
 

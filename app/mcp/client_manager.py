@@ -227,6 +227,22 @@ class MCPClientManager:
             timeout_seconds=timeout_seconds,
         )
 
+    async def get_google_drive_tools(
+        self,
+        attempt_id: Optional[str] = None,
+        operation_id: Optional[str] = None,
+        enable_db_logging: bool = True,
+        timeout_seconds: Optional[float] = 30.0,
+    ) -> List[Any]:
+        """Convenience helper to retrieve Google Drive MCP tools wrapped into MCPToolWrapper."""
+        return await self.get_server_tools(
+            server_name="google_drive",
+            attempt_id=attempt_id,
+            operation_id=operation_id,
+            enable_db_logging=enable_db_logging,
+            timeout_seconds=timeout_seconds,
+        )
+
     async def close(self) -> None:
         """Close client connections gracefully."""
         if self._client is not None:

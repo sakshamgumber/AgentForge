@@ -40,6 +40,9 @@ __all__ = [
     "create_github_mcp_wrapper",
     "get_github_tools",
     "infer_github_permission",
+    "create_google_drive_mcp_wrapper",
+    "get_google_drive_tools",
+    "infer_google_drive_permission",
     "BaseMCPToolProvider",
 ]
 
@@ -53,5 +56,10 @@ from app.tools.github import (
     create_github_mcp_wrapper,
     get_github_tools,
     infer_github_permission,
+)
+from app.tools.google_drive import (
+    create_google_drive_mcp_wrapper,
+    get_google_drive_tools,
+    infer_google_drive_permission,
 )
 

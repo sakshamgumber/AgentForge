@@ -38,6 +38,8 @@ __all__ = [
     "get_duckduckgo_tools",
     "create_github_mcp_wrapper",
     "get_github_tools",
+    "create_google_drive_mcp_wrapper",
+    "get_google_drive_tools",
 ]
 
 
@@ -47,5 +49,8 @@ def __getattr__(name: str):
         return locals()[name]
     if name in ("create_github_mcp_wrapper", "get_github_tools"):
         from app.tools.github import create_github_mcp_wrapper, get_github_tools
+        return locals()[name]
+    if name in ("create_google_drive_mcp_wrapper", "get_google_drive_tools"):
+        from app.tools.google_drive import create_google_drive_mcp_wrapper, get_google_drive_tools
         return locals()[name]
     raise AttributeError(f"module '{__name__}' has no attribute '{name}'")

@@ -110,7 +110,21 @@ class BaseMCPToolProvider(ABC):
         )
 
         try:
-            # Check if client manager has already wrapped server tools
+            helper_name = f"get_{self.server_name}_tools"
+            if hasattr(manager, helper_name):
+                tools = await getattr(manager, helper_name)(
+                    attempt_id=attempt_id,
+                    operation_id=operation_id,
+                    enable_db_logging=enable_db_logging,
+                    timeout_seconds=timeout_seconds,
+                )
+                if not tools:
+                    raise RuntimeError(
+                        f"{self.server_name.capitalize()} MCP server returned no tools. "
+                        f"Ensure the server package is installed and accessible."
+                    )
+                return tools
+
             if hasattr(manager, "get_server_tools"):
                 tools = await manager.get_server_tools(
                     server_name=self.server_name,
@@ -119,10 +133,19 @@ class BaseMCPToolProvider(ABC):
                     enable_db_logging=enable_db_logging,
                     timeout_seconds=timeout_seconds,
                 )
-                if tools:
-                    return tools
+                if not tools:
+                    raise RuntimeError(
+                        f"{self.server_name.capitalize()} MCP server returned no tools. "
+                        f"Ensure the server package is installed and accessible."
+                    )
+                return tools
 
-            raw_tools = await manager.get_tools()
+            if hasattr(manager, "get_tools"):
+                raw_tools = await manager.get_tools()
+            else:
+                raw_tools = []
+        except RuntimeError:
+            raise
         except Exception as e:
             logger.error("Failed to connect to %s MCP server: %s", self.server_name, e)
             raise RuntimeError(f"Could not connect to {self.server_name} MCP server: {e}") from e
