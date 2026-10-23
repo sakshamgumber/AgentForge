@@ -43,11 +43,26 @@ __all__ = [
     "create_google_drive_mcp_wrapper",
     "get_google_drive_tools",
     "infer_google_drive_permission",
+    "create_notion_mcp_wrapper",
+    "get_notion_tools",
+    "infer_notion_permission",
+    "create_context7_mcp_wrapper",
+    "get_context7_tools",
+    "infer_context7_permission",
+    "Context7APIClient",
+    "context7_client",
     "BaseMCPToolProvider",
 ]
 
 from app.tools.base_provider import BaseMCPToolProvider
 
+from app.tools.context7 import (
+    Context7APIClient,
+    context7_client,
+    create_context7_mcp_wrapper,
+    get_context7_tools,
+    infer_context7_permission,
+)
 from app.tools.duckduckgo import (
     create_duckduckgo_mcp_wrapper,
     get_duckduckgo_tools,
@@ -61,5 +76,10 @@ from app.tools.google_drive import (
     create_google_drive_mcp_wrapper,
     get_google_drive_tools,
     infer_google_drive_permission,
+)
+from app.tools.notion import (
+    create_notion_mcp_wrapper,
+    get_notion_tools,
+    infer_notion_permission,
 )
 

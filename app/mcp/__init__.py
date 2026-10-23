@@ -40,6 +40,11 @@ __all__ = [
     "get_github_tools",
     "create_google_drive_mcp_wrapper",
     "get_google_drive_tools",
+    "create_notion_mcp_wrapper",
+    "get_notion_tools",
+    "create_context7_mcp_wrapper",
+    "get_context7_tools",
+    "Context7APIClient",
 ]
 
 
@@ -52,5 +57,11 @@ def __getattr__(name: str):
         return locals()[name]
     if name in ("create_google_drive_mcp_wrapper", "get_google_drive_tools"):
         from app.tools.google_drive import create_google_drive_mcp_wrapper, get_google_drive_tools
+        return locals()[name]
+    if name in ("create_notion_mcp_wrapper", "get_notion_tools"):
+        from app.tools.notion import create_notion_mcp_wrapper, get_notion_tools
+        return locals()[name]
+    if name in ("create_context7_mcp_wrapper", "get_context7_tools", "Context7APIClient"):
+        from app.tools.context7 import create_context7_mcp_wrapper, get_context7_tools, Context7APIClient
         return locals()[name]
     raise AttributeError(f"module '{__name__}' has no attribute '{name}'")

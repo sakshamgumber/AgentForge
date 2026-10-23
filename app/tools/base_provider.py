@@ -4,11 +4,13 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 import logging
-from typing import Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
-from app.mcp.tool_wrapper import MCPToolWrapper
+if TYPE_CHECKING:
+    from app.mcp.tool_wrapper import MCPToolWrapper
+    from app.mcp.client_manager import MCPClientManager
+
 from app.tools.enums import ToolPermission
-from app.mcp.client_manager import MCPClientManager
 
 logger = logging.getLogger(__name__)
 
@@ -62,6 +64,8 @@ class BaseMCPToolProvider(ABC):
         if mcp_tool is None:
             raise ValueError(f"mcp_tool must be provided to {self.__class__.__name__}.wrap_tool")
 
+        from app.mcp.tool_wrapper import MCPToolWrapper
+
         tool_name = getattr(mcp_tool, "name", f"{self.server_name}_tool")
         resolved_permission = permissions or self.infer_permission(tool_name)
 
@@ -102,6 +106,7 @@ class BaseMCPToolProvider(ABC):
         Raises:
             RuntimeError: If connecting to the MCP server fails or no tools are returned.
         """
+        from app.mcp.client_manager import MCPClientManager
 
         manager = client_manager or MCPClientManager(
             enabled_servers=[self.server_name],

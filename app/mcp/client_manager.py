@@ -195,6 +195,22 @@ class MCPClientManager:
             or target in getattr(tool, "name", "").lower()
         ]
 
+    async def get_context7_tools(
+        self,
+        attempt_id: Optional[str] = None,
+        operation_id: Optional[str] = None,
+        enable_db_logging: bool = True,
+        timeout_seconds: Optional[float] = 30.0,
+    ) -> List[Any]:
+        """Convenience helper to retrieve Context7 MCP tools wrapped into MCPToolWrapper."""
+        return await self.get_server_tools(
+            server_name="context7",
+            attempt_id=attempt_id,
+            operation_id=operation_id,
+            enable_db_logging=enable_db_logging,
+            timeout_seconds=timeout_seconds,
+        )
+
     async def get_duckduckgo_tools(
         self,
         attempt_id: Optional[str] = None,
@@ -237,6 +253,22 @@ class MCPClientManager:
         """Convenience helper to retrieve Google Drive MCP tools wrapped into MCPToolWrapper."""
         return await self.get_server_tools(
             server_name="google_drive",
+            attempt_id=attempt_id,
+            operation_id=operation_id,
+            enable_db_logging=enable_db_logging,
+            timeout_seconds=timeout_seconds,
+        )
+
+    async def get_notion_tools(
+        self,
+        attempt_id: Optional[str] = None,
+        operation_id: Optional[str] = None,
+        enable_db_logging: bool = True,
+        timeout_seconds: Optional[float] = 30.0,
+    ) -> List[Any]:
+        """Convenience helper to retrieve Notion MCP tools wrapped into MCPToolWrapper."""
+        return await self.get_server_tools(
+            server_name="notion",
             attempt_id=attempt_id,
             operation_id=operation_id,
             enable_db_logging=enable_db_logging,
