@@ -37,10 +37,21 @@ __all__ = [
     "prune_empty_fields",
     "create_duckduckgo_mcp_wrapper",
     "get_duckduckgo_tools",
+    "create_github_mcp_wrapper",
+    "get_github_tools",
+    "infer_github_permission",
+    "BaseMCPToolProvider",
 ]
+
+from app.tools.base_provider import BaseMCPToolProvider
 
 from app.tools.duckduckgo import (
     create_duckduckgo_mcp_wrapper,
     get_duckduckgo_tools,
+)
+from app.tools.github import (
+    create_github_mcp_wrapper,
+    get_github_tools,
+    infer_github_permission,
 )
 

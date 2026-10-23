@@ -10,6 +10,7 @@ from app.mcp.configuration import (
     get_duckduckgo_config,
     get_filesystem_config,
     get_git_config,
+    get_github_config,
     get_google_drive_config,
     get_notion_config,
     get_sequential_thinking_config,
@@ -67,6 +68,7 @@ class MCPClientManager:
         "notion",
         "filesystem",
         "git",
+        "github",
         "sequential_thinking",
     }
 
@@ -99,6 +101,7 @@ class MCPClientManager:
             "notion": get_notion_config,
             "filesystem": get_filesystem_config,
             "git": get_git_config,
+            "github": get_github_config,
             "sequential_thinking": get_sequential_thinking_config,
         }
 
@@ -169,6 +172,29 @@ class MCPClientManager:
             wrapped_tools.append(wrapped)
         return wrapped_tools
 
+    async def get_server_tools(
+        self,
+        server_name: str,
+        attempt_id: Optional[str] = None,
+        operation_id: Optional[str] = None,
+        enable_db_logging: bool = True,
+        timeout_seconds: Optional[float] = 30.0,
+    ) -> List[Any]:
+        """Standard method to retrieve wrapped MCP tools filtered by server name."""
+        all_wrapped = await self.get_wrapped_tools(
+            attempt_id=attempt_id,
+            operation_id=operation_id,
+            enable_db_logging=enable_db_logging,
+            timeout_seconds=timeout_seconds,
+        )
+        target = server_name.lower()
+        return [
+            tool for tool in all_wrapped
+            if getattr(tool, "server_name", "").lower() == target
+            or getattr(tool, "name", "").lower().startswith(f"{target}_")
+            or target in getattr(tool, "name", "").lower()
+        ]
+
     async def get_duckduckgo_tools(
         self,
         attempt_id: Optional[str] = None,
@@ -177,17 +203,29 @@ class MCPClientManager:
         timeout_seconds: Optional[float] = 30.0,
     ) -> List[Any]:
         """Convenience helper to retrieve DuckDuckGo MCP tools wrapped into MCPToolWrapper."""
-        all_wrapped = await self.get_wrapped_tools(
+        return await self.get_server_tools(
+            server_name="duckduckgo",
             attempt_id=attempt_id,
             operation_id=operation_id,
             enable_db_logging=enable_db_logging,
             timeout_seconds=timeout_seconds,
         )
-        ddg_tools = [
-            tool for tool in all_wrapped
-            if getattr(tool, "server_name", "") == "duckduckgo" or "duckduckgo" in getattr(tool, "name", "")
-        ]
-        return ddg_tools
+
+    async def get_github_tools(
+        self,
+        attempt_id: Optional[str] = None,
+        operation_id: Optional[str] = None,
+        enable_db_logging: bool = True,
+        timeout_seconds: Optional[float] = 30.0,
+    ) -> List[Any]:
+        """Convenience helper to retrieve GitHub MCP tools wrapped into MCPToolWrapper."""
+        return await self.get_server_tools(
+            server_name="github",
+            attempt_id=attempt_id,
+            operation_id=operation_id,
+            enable_db_logging=enable_db_logging,
+            timeout_seconds=timeout_seconds,
+        )
 
     async def close(self) -> None:
         """Close client connections gracefully."""

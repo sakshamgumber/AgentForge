@@ -10,6 +10,7 @@ from app.mcp.configuration import (
     get_duckduckgo_config,
     get_filesystem_config,
     get_git_config,
+    get_github_config,
     get_google_drive_config,
     get_notion_config,
     get_sequential_thinking_config,
@@ -29,16 +30,22 @@ __all__ = [
     "get_duckduckgo_config",
     "get_filesystem_config",
     "get_git_config",
+    "get_github_config",
     "get_google_drive_config",
     "get_notion_config",
     "get_sequential_thinking_config",
     "create_duckduckgo_mcp_wrapper",
     "get_duckduckgo_tools",
+    "create_github_mcp_wrapper",
+    "get_github_tools",
 ]
 
 
 def __getattr__(name: str):
     if name in ("create_duckduckgo_mcp_wrapper", "get_duckduckgo_tools"):
         from app.tools.duckduckgo import create_duckduckgo_mcp_wrapper, get_duckduckgo_tools
+        return locals()[name]
+    if name in ("create_github_mcp_wrapper", "get_github_tools"):
+        from app.tools.github import create_github_mcp_wrapper, get_github_tools
         return locals()[name]
     raise AttributeError(f"module '{__name__}' has no attribute '{name}'")
