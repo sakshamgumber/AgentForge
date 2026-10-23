@@ -35,5 +35,12 @@ __all__ = [
     "compress_json",
     "compress_string",
     "prune_empty_fields",
+    "create_duckduckgo_mcp_wrapper",
+    "get_duckduckgo_tools",
 ]
+
+from app.tools.duckduckgo import (
+    create_duckduckgo_mcp_wrapper,
+    get_duckduckgo_tools,
+)
 

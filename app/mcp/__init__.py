@@ -32,4 +32,13 @@ __all__ = [
     "get_google_drive_config",
     "get_notion_config",
     "get_sequential_thinking_config",
+    "create_duckduckgo_mcp_wrapper",
+    "get_duckduckgo_tools",
 ]
+
+
+def __getattr__(name: str):
+    if name in ("create_duckduckgo_mcp_wrapper", "get_duckduckgo_tools"):
+        from app.tools.duckduckgo import create_duckduckgo_mcp_wrapper, get_duckduckgo_tools
+        return locals()[name]
+    raise AttributeError(f"module '{__name__}' has no attribute '{name}'")

@@ -151,8 +151,16 @@ class MCPClientManager:
         raw_tools = await self.get_tools()
         wrapped_tools = []
         for tool in raw_tools:
+            tool_name = getattr(tool, "name", "")
+            server_name = None
+            for s_name in self.enabled_servers:
+                if tool_name.startswith(f"{s_name}_") or tool_name == s_name:
+                    server_name = s_name
+                    break
+
             wrapped = MCPToolWrapper(
                 mcp_tool=tool,
+                server_name=server_name,
                 attempt_id=attempt_id,
                 operation_id=operation_id,
                 enable_db_logging=enable_db_logging,
@@ -161,6 +169,25 @@ class MCPClientManager:
             wrapped_tools.append(wrapped)
         return wrapped_tools
 
+    async def get_duckduckgo_tools(
+        self,
+        attempt_id: Optional[str] = None,
+        operation_id: Optional[str] = None,
+        enable_db_logging: bool = True,
+        timeout_seconds: Optional[float] = 30.0,
+    ) -> List[Any]:
+        """Convenience helper to retrieve DuckDuckGo MCP tools wrapped into MCPToolWrapper."""
+        all_wrapped = await self.get_wrapped_tools(
+            attempt_id=attempt_id,
+            operation_id=operation_id,
+            enable_db_logging=enable_db_logging,
+            timeout_seconds=timeout_seconds,
+        )
+        ddg_tools = [
+            tool for tool in all_wrapped
+            if getattr(tool, "server_name", "") == "duckduckgo" or "duckduckgo" in getattr(tool, "name", "")
+        ]
+        return ddg_tools
 
     async def close(self) -> None:
         """Close client connections gracefully."""

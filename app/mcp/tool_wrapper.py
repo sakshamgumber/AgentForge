@@ -27,7 +27,8 @@ def _extract_parameters_from_mcp_tool(mcp_tool: Any) -> Dict[str, Any]:
             return schema_cls.schema()
 
     if hasattr(mcp_tool, "args") and isinstance(mcp_tool.args, dict):
-        return {"type": "object", "properties": mcp_tool.args}
+        required = getattr(mcp_tool, "required", [])
+        return {"type": "object", "properties": mcp_tool.args, "required": list(required)}
 
     return {"type": "object", "properties": {}}
 
@@ -61,13 +62,14 @@ class MCPToolWrapper(BaseTool):
 
         tool_name = getattr(mcp_tool, "name", "mcp_tool")
         tool_desc = getattr(mcp_tool, "description", f"MCP Tool from {self.server_name} server")
-        params = _extract_parameters_from_mcp_tool(mcp_tool)
-        required_fields = params.get("required", [])
+        raw_schema = _extract_parameters_from_mcp_tool(mcp_tool)
+        properties = raw_schema.get("properties", raw_schema) if isinstance(raw_schema, dict) else {}
+        required_fields = raw_schema.get("required", []) if isinstance(raw_schema, dict) else []
 
         super().__init__(
             name=tool_name,
             description=tool_desc,
-            parameters=params,
+            parameters=properties,
             required=required_fields,
             additionalProperties=True,
             timeout_seconds=timeout_seconds,
